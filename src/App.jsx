@@ -86,15 +86,11 @@ function App() {
 
   return (
     <div className="dashboard">
-      <div
-        className="grid-1"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="grid-1">
         <span>Estadísticas de Conversos - Estaca Villa Mella</span>
+      </div>
+
+      <div className="filtro-barrio-container">
         <FiltroBarrio
           barrios={listaBarrios}
           barrioSeleccionado={barrioSeleccionado}
