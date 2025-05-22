@@ -1,3 +1,5 @@
+import React from "react";
+
 function StatsCards({ stats }) {
   return (
     <div className="stats-cards">
@@ -12,13 +14,11 @@ function StatsCards({ stats }) {
         </div>
         <div className="card">
           <p className="metric-label">Con Recomendación Activa</p>
-          <p className="metric-value">{stats.recomendacionActiva || 0}</p>
+          <p className="metric-value">{stats.conRecomendacion || 0}</p>
         </div>
         <div className="card">
           <p className="metric-label">Promedio (días) para Recomendación</p>
-          <p className="metric-value">
-            {stats.tiempoPromedioRecomendacion || 0}
-          </p>
+          <p className="metric-value">{stats.promedioDias || 0}</p>
         </div>
       </div>
     </div>
