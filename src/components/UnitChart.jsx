@@ -10,7 +10,7 @@ import {
 
 export const UnitChart = ({ data }) => {
   return (
-    <div className="card">
+    <div className="card" align="start">
       <h2 style={{ marginBottom: "1rem", fontSize: "1.25rem" }}>
         Conversos por Unidad (Barrio o Rama)
       </h2>

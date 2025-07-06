@@ -1,3 +1,13 @@
+export function filterByDateRange(data, dateRange) {
+  if (!dateRange.start || !dateRange.end) return data; // sin filtro
+
+  return data.filter((row) => {
+    const fechaBautismo = parseFecha(row["Fecha del bautismo"]);
+    if (!fechaBautismo || isNaN(fechaBautismo.getTime())) return false;
+    return fechaBautismo >= dateRange.start && fechaBautismo <= dateRange.end;
+  });
+}
+
 export function calculateStats(data) {
   const total = data.length;
 
@@ -40,11 +50,9 @@ export function calculateStats(data) {
         return null;
       }
 
-      // Restar 1 año para obtener fecha de expedición
       const fechaExpedicion = new Date(fechaVencimiento);
       fechaExpedicion.setFullYear(fechaExpedicion.getFullYear() - 1);
 
-      // Calcular días desde bautismo hasta expedición
       const dias = (fechaExpedicion - fechaBautismo) / (1000 * 60 * 60 * 24);
 
       return dias > 0 ? dias : null;
@@ -56,23 +64,28 @@ export function calculateStats(data) {
       ? Math.round(tiempos.reduce((a, b) => a + b, 0) / tiempos.length)
       : 0;
 
+  const promedioDiasSacerdocioValor = promedioDiasSacerdocio(data);
+
   console.log(`Total filas: ${total}`);
   console.log(
     `Filas con recomendación activa o vence próximo mes: ${conRecomendacion.length}`
   );
   console.log(`Con llamamiento: ${conLlamamiento}`);
-
   console.log(`Promedio días desde bautismo hasta expedición: ${promedioDias}`);
+  console.log(
+    `Promedio días desde bautismo hasta sacerdocio: ${promedioDiasSacerdocioValor}`
+  );
 
   return {
     total,
     conLlamamiento,
     conRecomendacion: conRecomendacion.length,
     promedioDias,
+    promedioDiasSacerdocio: promedioDiasSacerdocioValor,
   };
 }
 
-function parseFecha(fechaStr) {
+export function parseFecha(fechaStr) {
   // Soporta formatos "dd-mm-yyyy" y "mm-yyyy"
   let regexDMY = /^(\d{2})-(\d{2})-(\d{4})$/; // dd-mm-yyyy
   let regexMY = /^(\d{2})-(\d{4})$/; // mm-yyyy
@@ -129,6 +142,30 @@ export function groupByUnit(data) {
     unidad,
     cantidad,
   }));
+}
+export function promedioDiasSacerdocio(data) {
+  const tiemposSacerdocio = data
+    .map((row, index) => {
+      const fechaBautismo = parseFecha(row["Fecha del bautismo"]);
+      const fechaSacerdocio = parseFecha(row["Fecha de la ordenación"]);
+      if (
+        !fechaBautismo ||
+        isNaN(fechaBautismo.getTime()) ||
+        !fechaSacerdocio ||
+        isNaN(fechaSacerdocio.getTime())
+      ) {
+        return null;
+      }
+      const dias = (fechaSacerdocio - fechaBautismo) / (1000 * 60 * 60 * 24);
+      return dias > 0 ? dias : null;
+    })
+    .filter((d) => d !== null);
+
+  return tiemposSacerdocio.length > 0
+    ? Math.round(
+        tiemposSacerdocio.reduce((a, b) => a + b, 0) / tiemposSacerdocio.length
+      )
+    : 0;
 }
 
 export function groupByAgeSex(data) {

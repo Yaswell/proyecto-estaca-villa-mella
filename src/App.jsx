@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
-import Papa from "papaparse";
-
+import MonthYearFilter from "./components/MonthYearFilter";
 import StatsCards from "./components/StatsCards";
 import { AgeChart } from "./components/AgeChart";
 import { UnitChart } from "./components/UnitChart";
 import { FiltroBarrio } from "./components/filtroBarrio";
+import Papa from "papaparse";
 
 import {
   calculateStats,
   groupByAge,
   groupByUnit,
   groupByAgeSex,
+  parseFecha,
+  filterByDateRange,
 } from "./utils/dataProcessor";
 
 import "./index.css";
@@ -19,6 +21,7 @@ const SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1O9Ut_dgQdinJB2yPqk36Ozev2ADdYqq0QYG-4LzrhH0/gviz/tq?tqx=out:csv&gid=0";
 
 function App() {
+  const [dateRange, setDateRange] = useState({ start: null, end: null });
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [stats, setStats] = useState({
@@ -26,6 +29,7 @@ function App() {
     conRecomendacion: 0,
     promedioDias: 0,
     conLlamamiento: 0,
+    promedioDiasSacerdocio: 0,
   });
   const [ageData, setAgeData] = useState([]);
   const [ageSexData, setAgeSexData] = useState([]);
@@ -33,15 +37,7 @@ function App() {
   const [barrioSeleccionado, setBarrioSeleccionado] = useState("Estaca");
   const [listaBarrios, setListaBarrios] = useState([]);
 
-  // Función para extraer barrios únicos
-  const extraerBarriosUnicos = (data) => {
-    const barrios = data
-      .map((row) => row["Unidad"]?.trim())
-      .filter((b) => b && b.length > 0);
-    return ["Estaca", ...Array.from(new Set(barrios))];
-  };
-
-  // Carga inicial y extracción de barrios
+  // 1. Cargar datos desde la hoja de cálculo
   useEffect(() => {
     Papa.parse(SHEET_URL, {
       download: true,
@@ -52,42 +48,82 @@ function App() {
         );
         setData(filtered);
 
-        // Extraemos barrios
         const barriosUnicos = extraerBarriosUnicos(filtered);
         setListaBarrios(barriosUnicos);
+
+        const fechasValidas = filtered
+          .map((row) => parseFecha(row["Fecha del bautismo"]))
+          .filter((fecha) => fecha && !isNaN(fecha.getTime()));
+
+        if (fechasValidas.length > 0) {
+          const fechaMin = new Date(Math.min(...fechasValidas));
+          const fechaMax = new Date(Math.max(...fechasValidas));
+          fechaMin.setDate(1);
+          fechaMax.setDate(1);
+          setDateRange({ start: fechaMin, end: fechaMax });
+        }
+
+        console.log("Datos cargados:", filtered.length);
       },
     });
   }, []);
 
-  // Filtrar datos cada vez que cambie barrio o data
+  // 2. Procesar datos cuando haya cambios
   useEffect(() => {
+    if (!data.length || !dateRange.start || !dateRange.end) {
+      setFilteredData([]);
+      setStats({
+        total: 0,
+        conRecomendacion: 0,
+        promedioDias: 0,
+        conLlamamiento: 0,
+        promedioDiasSacerdocio: 0,
+      });
+      setAgeData([]);
+      setUnitData([]);
+      setAgeSexData([]);
+      return;
+    }
+
     let dataFiltrada = data;
+
     if (barrioSeleccionado !== "Estaca") {
-      dataFiltrada = data.filter(
+      dataFiltrada = dataFiltrada.filter(
         (row) => row["Unidad"]?.trim() === barrioSeleccionado
       );
     }
 
+    dataFiltrada = filterByDateRange(dataFiltrada, dateRange);
     setFilteredData(dataFiltrada);
 
-    // Calcular stats y agrupar datos con datos filtrados
     const statsCalc = calculateStats(dataFiltrada);
     setStats({
       total: statsCalc.total,
       conRecomendacion: statsCalc.conRecomendacion,
       promedioDias: statsCalc.promedioDias,
       conLlamamiento: statsCalc.conLlamamiento,
+      promedioDiasSacerdocio: statsCalc.promedioDiasSacerdocio,
     });
 
     setAgeData(groupByAge(dataFiltrada));
     setUnitData(groupByUnit(dataFiltrada));
     setAgeSexData(groupByAgeSex(dataFiltrada));
-  }, [barrioSeleccionado, data]);
+  }, [data, barrioSeleccionado, dateRange]);
+
+  const extraerBarriosUnicos = (data) => {
+    const barrios = data
+      .map((row) => row["Unidad"]?.trim())
+      .filter((b) => b && b.length > 0);
+    return ["Estaca", ...Array.from(new Set(barrios))];
+  };
 
   return (
     <div className="dashboard">
       <div className="grid-1">
         <span>Estadísticas de Conversos - Estaca Villa Mella</span>
+        {dateRange.start && dateRange.end && (
+          <MonthYearFilter dateRange={dateRange} setDateRange={setDateRange} />
+        )}
       </div>
 
       <div className="filtro-barrio-container">

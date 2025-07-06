@@ -21,6 +21,10 @@ function StatsCards({ stats }) {
           <p className="metric-value">{stats.promedioDias || 0}</p>
         </div>
       </div>
+      <div className="card">
+        <p className="metric-label">Promedio (días) para Sacerodio</p>
+        <p className="metric-value">{stats.promedioDiasSacerdocio || 0}</p>
+      </div>
     </div>
   );
 }
