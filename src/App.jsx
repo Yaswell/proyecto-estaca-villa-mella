@@ -36,8 +36,9 @@ function App() {
   const [unitData, setUnitData] = useState([]);
   const [barrioSeleccionado, setBarrioSeleccionado] = useState("Estaca");
   const [listaBarrios, setListaBarrios] = useState([]);
-
+  const [monthOptions, setMonthOptions] = useState([]);
   // 1. Cargar datos desde la hoja de cálculo
+
   useEffect(() => {
     Papa.parse(SHEET_URL, {
       download: true,
@@ -56,14 +57,27 @@ function App() {
           .filter((fecha) => fecha && !isNaN(fecha.getTime()));
 
         if (fechasValidas.length > 0) {
-          const fechaMin = new Date(Math.min(...fechasValidas));
-          const fechaMax = new Date(Math.max(...fechasValidas));
-          fechaMin.setDate(1);
-          fechaMax.setDate(1);
-          setDateRange({ start: fechaMin, end: fechaMax });
-        }
+          const min = new Date(Math.min(...fechasValidas));
+          const max = new Date(Math.max(...fechasValidas));
 
-        console.log("Datos cargados:", filtered.length);
+          min.setDate(1);
+          max.setDate(1);
+
+          setDateRange({ start: min, end: max });
+
+          // Generar lista de meses únicos entre min y max
+          const options = [];
+          const cursor = new Date(min);
+          while (cursor <= max) {
+            options.push({
+              month: cursor.getMonth(),
+              year: cursor.getFullYear(),
+            });
+            cursor.setMonth(cursor.getMonth() + 1);
+          }
+
+          setMonthOptions(options);
+        }
       },
     });
   }, []);
@@ -122,7 +136,11 @@ function App() {
       <div className="grid-1">
         <span>Estadísticas de Conversos - Estaca Villa Mella</span>
         {dateRange.start && dateRange.end && (
-          <MonthYearFilter dateRange={dateRange} setDateRange={setDateRange} />
+          <MonthYearFilter
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            monthOptions={monthOptions}
+          />
         )}
       </div>
 
@@ -134,7 +152,7 @@ function App() {
         />
       </div>
 
-      <StatsCards stats={stats} />
+      <StatsCards stats={stats} dateRange={dateRange} />
 
       <div className="grid-2">
         <UnitChart data={unitData} />
