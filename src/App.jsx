@@ -30,6 +30,8 @@ function App() {
     promedioDias: 0,
     conLlamamiento: 0,
     promedioDiasSacerdocio: 0,
+    conMinistrantes: 0,
+    clasificacionEdad: { jovenes: 0, jas: 0, adultos: 0 },
   });
   const [ageData, setAgeData] = useState([]);
   const [ageSexData, setAgeSexData] = useState([]);
@@ -45,8 +47,13 @@ function App() {
       header: true,
       complete: (results) => {
         const filtered = results.data.filter(
-          (row) => row["Nombre de preferencia"]
+          (row) =>
+            row["Nombre de preferencia"] &&
+            Object.values(row).some((v) => v && v.trim && v.trim() !== "")
         );
+        console.log("Total crudo:", results.data.length);
+        console.log("Filtrados válidos:", filtered.length);
+
         setData(filtered);
 
         const barriosUnicos = extraerBarriosUnicos(filtered);
@@ -60,15 +67,18 @@ function App() {
           const min = new Date(Math.min(...fechasValidas));
           const max = new Date(Math.max(...fechasValidas));
 
+          // Primer día del mes mínimo
           min.setDate(1);
-          max.setDate(1);
 
-          setDateRange({ start: min, end: max });
+          // Último día del mes del último bautismo
+          const end = new Date(max.getFullYear(), max.getMonth() + 1, 0); // ← Esto es 30 o 31 dependiendo
 
-          // Generar lista de meses únicos entre min y max
+          setDateRange({ start: min, end });
+
+          // Generar lista de meses únicos desde min hasta end
           const options = [];
           const cursor = new Date(min);
-          while (cursor <= max) {
+          while (cursor <= end) {
             options.push({
               month: cursor.getMonth(),
               year: cursor.getFullYear(),
@@ -92,6 +102,8 @@ function App() {
         promedioDias: 0,
         conLlamamiento: 0,
         promedioDiasSacerdocio: 0,
+        conMinistrantes: 0,
+        clasificacionEdad: { jovenes: 0, jas: 0, adultos: 0 },
       });
       setAgeData([]);
       setUnitData([]);
@@ -108,6 +120,13 @@ function App() {
     }
 
     dataFiltrada = filterByDateRange(dataFiltrada, dateRange);
+    console.log(
+      "Rango activo:",
+      dateRange.start?.toLocaleDateString(),
+      "-",
+      dateRange.end?.toLocaleDateString()
+    );
+    console.log("Filas después del filtro de fechas:", dataFiltrada.length);
     setFilteredData(dataFiltrada);
 
     const statsCalc = calculateStats(dataFiltrada);
@@ -117,6 +136,8 @@ function App() {
       promedioDias: statsCalc.promedioDias,
       conLlamamiento: statsCalc.conLlamamiento,
       promedioDiasSacerdocio: statsCalc.promedioDiasSacerdocio,
+      conMinistrantes: statsCalc.conMinistrantes,
+      clasificacionEdad: statsCalc.clasificacionEdad,
     });
 
     setAgeData(groupByAge(dataFiltrada));
@@ -135,6 +156,8 @@ function App() {
     <div className="dashboard">
       <div className="grid-1">
         <span>Estadísticas de Conversos - Estaca Villa Mella</span>
+      </div>
+      <div className="filtro-barrio-container">
         {dateRange.start && dateRange.end && (
           <MonthYearFilter
             dateRange={dateRange}
@@ -143,7 +166,6 @@ function App() {
           />
         )}
       </div>
-
       <div className="filtro-barrio-container">
         <FiltroBarrio
           barrios={listaBarrios}

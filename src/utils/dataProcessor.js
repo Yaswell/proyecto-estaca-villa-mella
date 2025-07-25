@@ -25,63 +25,87 @@ export function calculateStats(data) {
     );
   });
 
-  const tiempos = conRecomendacion
-    .map((row, index) => {
-      const fechaBautismo = parseFecha(row["Fecha del bautismo"]);
-      if (!fechaBautismo || isNaN(fechaBautismo.getTime())) {
-        console.log(
-          `Fila ${index}: Fecha bautismo inválida -> ${row["Fecha del bautismo"]}`
-        );
-        return null;
-      }
+  // 👇 Clasificación por edad y estado civil
+  const clasificacionEdad = {
+    jovenes: 0, // 11-17
+    jas: 0, // 18-30 y no casado
+    adultos: 0, // 18-30 y casado, o 31+
+  };
 
+  conRecomendacion.forEach((row) => {
+    const edad = parseInt(row["Edad"]);
+    const casado = row["Está casado"]?.trim().toLowerCase() === "sí";
+
+    if (!isNaN(edad)) {
+      if (edad >= 11 && edad <= 17) {
+        clasificacionEdad.jovenes++;
+      } else if (edad >= 18 && edad <= 30) {
+        if (casado) clasificacionEdad.adultos++;
+        else clasificacionEdad.jas++;
+      } else if (edad >= 31) {
+        clasificacionEdad.adultos++;
+      }
+    }
+  });
+
+  const hoy = new Date();
+  const mesActual = hoy.getMonth();
+  const anioActual = hoy.getFullYear();
+
+  const tiempos = conRecomendacion
+    .map((row) => {
+      const fechaBautismo = parseFecha(row["Fecha del bautismo"]);
       const vencimientoRaw =
         row["Fecha de vencimiento de la recomendación para el templo"];
-      if (!vencimientoRaw || vencimientoRaw.trim() === "") {
-        console.log(`Fila ${index}: Sin fecha de vencimiento`);
+
+      if (
+        !fechaBautismo ||
+        isNaN(fechaBautismo.getTime()) ||
+        !vencimientoRaw ||
+        vencimientoRaw.trim() === ""
+      ) {
         return null;
       }
 
       const fechaVencimiento = parseFecha(vencimientoRaw);
       if (!fechaVencimiento || isNaN(fechaVencimiento.getTime())) {
-        console.log(
-          `Fila ${index}: Fecha vencimiento inválida -> ${vencimientoRaw}`
-        );
         return null;
       }
 
-      const fechaExpedicion = new Date(fechaVencimiento);
-      fechaExpedicion.setFullYear(fechaExpedicion.getFullYear() - 1);
+      const añoVencimiento = fechaVencimiento.getFullYear();
+      const mesVencimiento = fechaVencimiento.getMonth();
 
-      const dias = (fechaExpedicion - fechaBautismo) / (1000 * 60 * 60 * 24);
+      const mesExpedicion = new Date(añoVencimiento - 1, mesVencimiento, 1); // asumes día 1 del mes
+      const esMesEnCurso =
+        fechaBautismo.getMonth() === mesActual &&
+        fechaBautismo.getFullYear() === anioActual;
 
+      if (esMesEnCurso) {
+        return 10; // estimado conservador
+      }
+
+      const dias = (mesExpedicion - fechaBautismo) / (1000 * 60 * 60 * 24);
       return dias > 0 ? dias : null;
     })
     .filter((d) => d !== null);
-
   const promedioDias =
     tiempos.length > 0
       ? Math.round(tiempos.reduce((a, b) => a + b, 0) / tiempos.length)
       : 0;
-
-  const promedioDiasSacerdocioValor = promedioDiasSacerdocio(data);
-
-  console.log(`Total filas: ${total}`);
-  console.log(
-    `Filas con recomendación activa o vence próximo mes: ${conRecomendacion.length}`
-  );
-  console.log(`Con llamamiento: ${conLlamamiento}`);
-  console.log(`Promedio días desde bautismo hasta expedición: ${promedioDias}`);
-  console.log(
-    `Promedio días desde bautismo hasta sacerdocio: ${promedioDiasSacerdocioValor}`
-  );
+  const conMinistrantes = data.filter((row) => {
+    const hnos = row["Tiene hermanos ministrantes"]?.trim().toLowerCase();
+    const hnas = row["Tiene hermanas ministrantes"]?.trim().toLowerCase();
+    return hnos === "sí" || hnos === "si" || hnas === "sí" || hnas === "si";
+  }).length;
 
   return {
     total,
     conLlamamiento,
     conRecomendacion: conRecomendacion.length,
     promedioDias,
-    promedioDiasSacerdocio: promedioDiasSacerdocioValor,
+    promedioDiasSacerdocio: promedioDiasSacerdocio,
+    conMinistrantes,
+    clasificacionEdad,
   };
 }
 

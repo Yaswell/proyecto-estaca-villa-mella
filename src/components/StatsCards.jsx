@@ -23,9 +23,15 @@ function StatsCards({ stats, dateRange }) {
           <p className="metric-value">{stats.promedioDias || 0}</p>
         </div>
       </div>
-      <div className="card">
-        <p className="metric-label">Promedio (días) para Sacerdocio</p>
-        <p className="metric-value">{stats.promedioDiasSacerdocio || 0}</p>
+      <div className="grid-2">
+        <div className="card">
+          <p className="metric-label">Promedio (días) para Sacerdocio</p>
+          <p className="metric-value">{stats.promedioDiasSacerdocio || 0}</p>
+        </div>
+        <div className="card">
+          <p className="metric-label">Con ministrantes asignados</p>
+          <p className="metric-value">{stats.conMinistrantes || 0}</p>
+        </div>
       </div>
     </div>
   );
