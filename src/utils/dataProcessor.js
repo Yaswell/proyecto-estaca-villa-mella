@@ -103,7 +103,7 @@ export function calculateStats(data) {
     conLlamamiento,
     conRecomendacion: conRecomendacion.length,
     promedioDias,
-    promedioDiasSacerdocio: promedioDiasSacerdocio,
+    promedioDiasSacerdocio: promedioDiasSacerdocio(data),
     conMinistrantes,
     clasificacionEdad,
   };
