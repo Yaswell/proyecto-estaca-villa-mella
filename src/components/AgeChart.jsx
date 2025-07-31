@@ -28,8 +28,8 @@ export const AgeChart = ({ data, title = "Conversos por Edad" }) => {
           <p>
             <strong>{label} años</strong>
           </p>
-          <p>👨 Masculino: {payload[0]?.value}</p>
-          <p>👩 Femenino: {payload[1]?.value}</p>
+          <p>👨 Masculino: {payload[1]?.value}</p>
+          <p>👩 Femenino: {payload[0]?.value}</p>
         </div>
       );
     }
