@@ -32,6 +32,8 @@ function App() {
     promedioDiasSacerdocio: 0,
     conMinistrantes: 0,
     clasificacionEdad: { jovenes: 0, jas: 0, adultos: 0 },
+    totalInvestidos: 0,
+    totalSellados: 0,
   });
   const [ageData, setAgeData] = useState([]);
   const [ageSexData, setAgeSexData] = useState([]);
@@ -104,6 +106,8 @@ function App() {
         promedioDiasSacerdocio: 0,
         conMinistrantes: 0,
         clasificacionEdad: { jovenes: 0, jas: 0, adultos: 0 },
+        totalInvestidos: 0,
+        totalSellados: 0,
       });
       setAgeData([]);
       setUnitData([]);
@@ -138,6 +142,8 @@ function App() {
       promedioDiasSacerdocio: statsCalc.promedioDiasSacerdocio,
       conMinistrantes: statsCalc.conMinistrantes,
       clasificacionEdad: statsCalc.clasificacionEdad,
+      totalInvestidos: statsCalc.totalInvestidos,
+      totalSellados: statsCalc.totalSellados,
     });
 
     setAgeData(groupByAge(dataFiltrada));

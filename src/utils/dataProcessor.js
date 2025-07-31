@@ -97,6 +97,15 @@ export function calculateStats(data) {
     const hnas = row["Tiene hermanas ministrantes"]?.trim().toLowerCase();
     return hnos === "sí" || hnos === "si" || hnas === "sí" || hnas === "si";
   }).length;
+  const totalInvestidos = data.filter((row) => {
+    const valor = row["Está investido"]?.trim().toLowerCase();
+    return valor === "sí" || valor === "si";
+  }).length;
+
+  const totalSellados = data.filter((row) => {
+    const valor = row["Está sellado al cónyuge"]?.trim().toLowerCase();
+    return valor === "sí" || valor === "si";
+  }).length;
 
   return {
     total,
@@ -106,6 +115,8 @@ export function calculateStats(data) {
     promedioDiasSacerdocio: promedioDiasSacerdocio(data),
     conMinistrantes,
     clasificacionEdad,
+    totalInvestidos,
+    totalSellados,
   };
 }
 
