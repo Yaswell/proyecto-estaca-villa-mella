@@ -198,7 +198,7 @@ export function promedioDiasSacerdocio(data) {
 
   return tiemposSacerdocio.length > 0
     ? Math.round(
-        tiemposSacerdocio.reduce((a, b) => a + b, 0) / tiemposSacerdocio.length
+        tiemposSacerdocio.reduce((a, b) => a + b, 0) / tiemposSacerdocio.length,
       )
     : 0;
 }
@@ -226,4 +226,44 @@ export function groupByAgeSex(data) {
       cantidad,
     };
   });
+}
+export function calcularIndicadoresTemplo(
+  data,
+  historiaData,
+  barrioSeleccionado,
+) {
+  // 1. Edad de recomendación (11+)
+  const enEdad = data.filter((row) => {
+    const edad = parseInt(row["Edad"]);
+    return !isNaN(edad) && edad >= 11;
+  });
+
+  // 2. Con recomendación
+  const conRecomendacion = enEdad.filter((row) => {
+    const estado = row["Estado de la recomendación para el templo"];
+    return (
+      estado &&
+      (estado.trim().toLowerCase() === "activa" ||
+        estado.trim().toLowerCase() === "vence el próximo mes")
+    );
+  });
+
+  // 3. Historia familiar (por unidad)
+  let enviados = 0;
+
+  if (barrioSeleccionado === "Estaca") {
+    const estaca = historiaData.find((h) => h.unidad === "Estaca");
+    enviados = estaca?.enviados || 0;
+  } else {
+    const unidad = historiaData.find(
+      (h) => h.unidad.trim() === barrioSeleccionado,
+    );
+    enviados = unidad?.enviados || 0;
+  }
+
+  return {
+    totalEdad: enEdad.length,
+    conRecomendacion: conRecomendacion.length,
+    enviados,
+  };
 }

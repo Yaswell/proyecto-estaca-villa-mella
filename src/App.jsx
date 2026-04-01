@@ -4,6 +4,7 @@ import StatsCards from "./components/StatsCards";
 import { AgeChart } from "./components/AgeChart";
 import { UnitChart } from "./components/UnitChart";
 import { FiltroBarrio } from "./components/filtroBarrio";
+import { TemploChart } from "./components/TemploChart"; // 👈 NUEVO
 import Papa from "papaparse";
 
 import {
@@ -13,6 +14,7 @@ import {
   groupByAgeSex,
   parseFecha,
   filterByDateRange,
+  calcularIndicadoresTemplo,
 } from "./utils/dataProcessor";
 
 import "./index.css";
@@ -20,10 +22,26 @@ import "./index.css";
 const SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1O9Ut_dgQdinJB2yPqk36Ozev2ADdYqq0QYG-4LzrhH0/gviz/tq?tqx=out:csv&gid=0";
 
+const HISTORIA_FAMILIAR_URL =
+  "https://docs.google.com/spreadsheets/d/1O9Ut_dgQdinJB2yPqk36Ozev2ADdYqq0QYG-4LzrhH0/gviz/tq?tqx=out:csv&gid=512269246";
+
 function App() {
   const [dateRange, setDateRange] = useState({ start: null, end: null });
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
+  const [historiaFamiliarData, setHistoriaFamiliarData] = useState([]); // 👈 NUEVO
+
+  const [temploStats, setTemploStats] = useState({
+    totalEdad: 0,
+    conRecomendacion: 0,
+    enviados: 0,
+  });
+
+  const [hoverDetalle, setHoverDetalle] = useState({
+    titulo: "",
+    personas: [],
+  });
+
   const [stats, setStats] = useState({
     total: 0,
     conRecomendacion: 0,
@@ -35,14 +53,24 @@ function App() {
     totalInvestidos: 0,
     totalSellados: 0,
   });
+
   const [ageData, setAgeData] = useState([]);
   const [ageSexData, setAgeSexData] = useState([]);
   const [unitData, setUnitData] = useState([]);
   const [barrioSeleccionado, setBarrioSeleccionado] = useState("Estaca");
   const [listaBarrios, setListaBarrios] = useState([]);
   const [monthOptions, setMonthOptions] = useState([]);
-  // 1. Cargar datos desde la hoja de cálculo
 
+  const handleHover = (titulo, filtroCallback) => {
+    const personas = filtroCallback(filteredData);
+    setHoverDetalle({ titulo, personas });
+  };
+
+  const handleLeave = () => {
+    setHoverDetalle({ titulo: "", personas: [] });
+  };
+
+  // 🔹 1. Cargar data principal
   useEffect(() => {
     Papa.parse(SHEET_URL, {
       download: true,
@@ -51,10 +79,8 @@ function App() {
         const filtered = results.data.filter(
           (row) =>
             row["Nombre de preferencia"] &&
-            Object.values(row).some((v) => v && v.trim && v.trim() !== "")
+            Object.values(row).some((v) => v && v.trim && v.trim() !== ""),
         );
-        console.log("Total crudo:", results.data.length);
-        console.log("Filtrados válidos:", filtered.length);
 
         setData(filtered);
 
@@ -69,15 +95,11 @@ function App() {
           const min = new Date(Math.min(...fechasValidas));
           const max = new Date(Math.max(...fechasValidas));
 
-          // Primer día del mes mínimo
           min.setDate(1);
-
-          // Último día del mes del último bautismo
-          const end = new Date(max.getFullYear(), max.getMonth() + 1, 0); // ← Esto es 30 o 31 dependiendo
+          const end = new Date(max.getFullYear(), max.getMonth() + 1, 0);
 
           setDateRange({ start: min, end });
 
-          // Generar lista de meses únicos desde min hasta end
           const options = [];
           const cursor = new Date(min);
           while (cursor <= end) {
@@ -94,7 +116,37 @@ function App() {
     });
   }, []);
 
-  // 2. Procesar datos cuando haya cambios
+  // 🔹 2. Cargar Historia Familiar
+  useEffect(() => {
+    Papa.parse(HISTORIA_FAMILIAR_URL, {
+      download: true,
+      header: true,
+      complete: (results) => {
+        const parsed = results.data
+          .map((row) => {
+            const unidad = row["Unidad"]?.trim();
+            const raw = row["Miembros nuevos"];
+
+            if (!unidad || !raw) return null;
+
+            const [enviados, total] = raw
+              .split("/")
+              .map((v) => parseInt(v.trim()));
+
+            return {
+              unidad,
+              enviados: isNaN(enviados) ? 0 : enviados,
+              total: isNaN(total) ? 0 : total,
+            };
+          })
+          .filter(Boolean);
+
+        setHistoriaFamiliarData(parsed);
+      },
+    });
+  }, []);
+
+  // 🔹 3. Procesamiento principal
   useEffect(() => {
     if (!data.length || !dateRange.start || !dateRange.end) {
       setFilteredData([]);
@@ -119,37 +171,29 @@ function App() {
 
     if (barrioSeleccionado !== "Estaca") {
       dataFiltrada = dataFiltrada.filter(
-        (row) => row["Unidad"]?.trim() === barrioSeleccionado
+        (row) => row["Unidad"]?.trim() === barrioSeleccionado,
       );
     }
 
     dataFiltrada = filterByDateRange(dataFiltrada, dateRange);
-    console.log(
-      "Rango activo:",
-      dateRange.start?.toLocaleDateString(),
-      "-",
-      dateRange.end?.toLocaleDateString()
-    );
-    console.log("Filas después del filtro de fechas:", dataFiltrada.length);
     setFilteredData(dataFiltrada);
 
     const statsCalc = calculateStats(dataFiltrada);
-    setStats({
-      total: statsCalc.total,
-      conRecomendacion: statsCalc.conRecomendacion,
-      promedioDias: statsCalc.promedioDias,
-      conLlamamiento: statsCalc.conLlamamiento,
-      promedioDiasSacerdocio: statsCalc.promedioDiasSacerdocio,
-      conMinistrantes: statsCalc.conMinistrantes,
-      clasificacionEdad: statsCalc.clasificacionEdad,
-      totalInvestidos: statsCalc.totalInvestidos,
-      totalSellados: statsCalc.totalSellados,
-    });
+    setStats(statsCalc);
 
     setAgeData(groupByAge(dataFiltrada));
     setUnitData(groupByUnit(dataFiltrada));
     setAgeSexData(groupByAgeSex(dataFiltrada));
-  }, [data, barrioSeleccionado, dateRange]);
+
+    // 👇 NUEVO: cálculo templo
+    const templo = calcularIndicadoresTemplo(
+      dataFiltrada,
+      historiaFamiliarData,
+      barrioSeleccionado,
+    );
+
+    setTemploStats(templo);
+  }, [data, barrioSeleccionado, dateRange, historiaFamiliarData]);
 
   const extraerBarriosUnicos = (data) => {
     const barrios = data
@@ -163,6 +207,7 @@ function App() {
       <div className="grid-1">
         <span>Estadísticas de Conversos - Estaca Villa Mella</span>
       </div>
+
       <div className="filtro-barrio-container">
         {dateRange.start && dateRange.end && (
           <MonthYearFilter
@@ -172,6 +217,7 @@ function App() {
           />
         )}
       </div>
+
       <div className="filtro-barrio-container">
         <FiltroBarrio
           barrios={listaBarrios}
@@ -180,7 +226,14 @@ function App() {
         />
       </div>
 
-      <StatsCards stats={stats} dateRange={dateRange} />
+      <StatsCards
+        stats={stats}
+        temploStats={temploStats} // 👈 NUEVO
+        dateRange={dateRange}
+        handleHover={handleHover}
+        handleLeave={handleLeave}
+        hoverDetalle={hoverDetalle} // 👈 también faltaba esto
+      />
 
       <div className="grid-2">
         <UnitChart data={unitData} />
