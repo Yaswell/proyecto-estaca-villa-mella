@@ -22,24 +22,27 @@ export default function MonthYearFilter({
 }) {
   const handleChange = (e, type) => {
     const [month, year] = e.target.value.split("-");
-    const newDate = new Date(parseInt(year), parseInt(month));
-    setDateRange((prev) => ({
-      ...prev,
-      [type]: newDate,
-    }));
+    const newDate = type === "end"
+      ? new Date(Number(year), Number(month) + 1, 0)
+      : new Date(Number(year), Number(month), 1);
+    setDateRange((prev) => {
+      if (type === "start" && newDate > prev.end) {
+        return { start: newDate, end: new Date(Number(year), Number(month) + 1, 0) };
+      }
+      if (type === "end" && newDate < prev.start) {
+        return { start: new Date(Number(year), Number(month), 1), end: newDate };
+      }
+      return { ...prev, [type]: newDate };
+    });
   };
 
   const formatValue = (month, year) => `${month}-${year}`;
 
   return (
-    <div
-      className="filtro-fechas"
-      style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}
-    >
-      <div>
-        <label>Desde:</label>
-        <br />
-        <select
+    <div className="sr-date-fields">
+      <div className="sr-field">
+        <label htmlFor="sr-desde">Bautismos desde</label>
+        <select id="sr-desde"
           value={formatValue(
             dateRange.start.getMonth(),
             dateRange.start.getFullYear()
@@ -56,10 +59,9 @@ export default function MonthYearFilter({
           ))}
         </select>
       </div>
-      <div>
-        <label>Hasta:</label>
-        <br />
-        <select
+      <div className="sr-field">
+        <label htmlFor="sr-hasta">Bautismos hasta</label>
+        <select id="sr-hasta"
           value={formatValue(
             dateRange.end.getMonth(),
             dateRange.end.getFullYear()

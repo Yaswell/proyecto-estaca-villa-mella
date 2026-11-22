@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <style>
+    :root { color-scheme:light; font: 16px/1.5 system-ui,sans-serif; color:#142f42; background:#f2f6fa }
+    * { box-sizing:border-box }
+    main { max-width:42rem; margin:1.5rem auto; padding:0 1rem }
+    header { padding:1.2rem; background:#102f46; color:white; border-radius:.8rem; margin-bottom:1rem }
+    header p { margin:0; color:#a8e9dc }
+    h1 { margin:.2rem 0; font-size:1.65rem }
+    form { display:grid; gap:.8rem; background:white; border:1px solid #d8e3ed; border-radius:.8rem; padding:1rem }
+    label { display:grid; gap:.25rem; font-weight:650 }
+    input, select, button { font:inherit; padding:.6rem; min-height:2.75rem; border:1px solid #8196aa; border-radius:.45rem; width:100% }
+    button { background:#174d78; color:white; font-weight:700; border:0; cursor:pointer }
+    button:disabled { opacity:.65; cursor:wait }
+    [hidden] { display:none !important }
+    #estado { margin:.6rem 0; overflow-wrap:anywhere }
+    #estado.error { color:#9e2433 }
+  </style>
+</head>
+<body>
+<main>
+  <header><p>CONVERSOS RECIENTES · VILLA MELLA</p><h1>Senda de los convenios</h1></header>
+  <form id="acceso">
+    <label>Barrio o rama <select id="unidad" required><option value="">Cargando unidades…</option></select></label>
+    <button id="cargar" disabled>Ver miembros nuevos</button>
+  </form>
+  <form id="reporte" hidden>
+    <label>Miembro nuevo <select id="persona" required></select></label>
+    <p id="tiempo" hidden></p>
+    <section aria-labelledby="historial-title"><h2 id="historial-title">Acciones registradas</h2><ul id="historial"></ul></section>
+    <label>Acción realizada <select id="accion" required>
+      <option value="">Selecciona una acción</option>
+      <option>Lección posbautismal</option>
+      <option>Entrevista significativa</option>
+      <option>Visita al templo</option>
+      <option>Visita con tarjeta de familiar propio</option>
+    </select></label>
+    <label>Tu nombre <input id="responsable" type="text" required maxlength="100" minlength="2" autocomplete="name"></label>
+    <label>Responsabilidad <select id="rol" required>
+      <option value="">Selecciona tu responsabilidad</option>
+      <option>Misioneros</option><option>Obispado</option><option>Cuórum de élderes</option>
+      <option>Sociedad de Socorro</option><option>Consultor de templo e historia familiar</option>
+    </select></label>
+    <label>Fecha de la acción <input id="fecha" type="date" required></label>
+    <button id="enviar">Enviar reporte</button>
+  </form>
+  <p id="estado" role="status" aria-live="polite"></p>
+</main>
+<script>
+  const get = id => document.getElementById(id);
+  const acceso = get('acceso'), reporte = get('reporte'), unidad = get('unidad');
+  const cargar = get('cargar'), enviar = get('enviar'), persona = get('persona'), fecha = get('fecha');
+  let seleccion = null, registros = [];
+  const notify = (message, error = false) => {
+    get('estado').textContent = message;
+    get('estado').classList.toggle('error', error);
+  };
+  function limpiar() {
+    seleccion = null;
+    reporte.hidden = true;
+    reporte.reset();
+    persona.replaceChildren();
+    get('tiempo').hidden = true;
+    registros = [];
+    get('historial').replaceChildren();
+  }
+  unidad.addEventListener('change', () => { limpiar(); notify(''); });
+  google.script.run.withFailureHandler(() => notify('No se pudo cargar la lista de unidades. Consulta al responsable.', true))
+    .withSuccessHandler(unidades => {
+      unidad.replaceChildren(new Option('Selecciona tu unidad', ''), ...unidades.map(name => new Option(name, name)));
+      cargar.disabled = !unidades.length;
+    }).unidades();
+  acceso.addEventListener('submit', event => {
+    event.preventDefault();
+    limpiar();
+    const request = { unidad: unidad.value };
+    cargar.disabled = true;
+    notify('Cargando lista…');
+    google.script.run.withFailureHandler(error => {
+      cargar.disabled = false;
+      if (unidad.value === request.unidad) notify(error.message, true);
+    }).withSuccessHandler(rows => {
+      cargar.disabled = false;
+      if (unidad.value !== request.unidad) return;
+      if (!rows.length) return notify('No hay miembros nuevos disponibles en esta unidad.');
+      seleccion = request;
+      registros = rows;
+      const totals = new Map();
+      const occurrences = new Map();
+      rows.forEach(row => totals.set(row.nombre, (totals.get(row.nombre) || 0) + 1));
+      persona.replaceChildren(new Option('Selecciona un primer nombre', ''), ...rows.map(row => {
+        const key = row.nombre + row.bautismo;
+        occurrences.set(key, (occurrences.get(key) || 0) + 1);
+        const option = new Option(row.nombre, row.token);
+        option.dataset.bautismo = row.bautismo;
+        if (totals.get(row.nombre) > 1) option.textContent += ' · ' + row.bautismo + ' (' + occurrences.get(key) + ')';
+        return option;
+      }));
+      reporte.hidden = false;
+      notify('');
+      persona.focus();
+    }).conversos(request.unidad);
+  });
+  const hoy = () => {
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone:'America/Santo_Domingo', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date());
+    return ['year','month','day'].map(key => parts.find(p => p.type === key).value).join('-');
+  };
+  persona.addEventListener('change', () => {
+    const bautismo = persona.selectedOptions[0]?.dataset.bautismo;
+    const row = registros.find(row => row.token === persona.value);
+    get('historial').replaceChildren(...(row?.hechos?.length ? row.hechos.map(hecho => {
+      const li = document.createElement('li');
+      li.textContent = hecho.accion + ': ' + hecho.fecha;
+      return li;
+    }) : [Object.assign(document.createElement('li'), {textContent:'Sin acciones registradas en Seguimiento.'})]));
+    const info = get('tiempo');
+    info.hidden = !bautismo;
+    fecha.min = bautismo || '';
+    fecha.max = hoy();
+    if (bautismo) {
+      const days = (Date.parse(hoy()) - Date.parse(bautismo)) / 86400000;
+      info.textContent = 'Desde el bautismo: ' + days + ' días · ' + Math.floor(days / 7) + ' semanas completas.';
+    }
+  });
+  reporte.addEventListener('submit', event => {
+    event.preventDefault();
+    if (!seleccion || enviar.disabled) return;
+    const payload = { ...seleccion, token: persona.value, accion: get('accion').value, fecha: fecha.value, responsable: get('responsable').value, rol: get('rol').value };
+    const fields = Array.from(document.querySelectorAll('input, select, button'));
+    fields.forEach(field => { field.disabled = true; });
+    const unlock = () => fields.forEach(field => { field.disabled = false; });
+    notify('Enviando reporte…');
+    google.script.run.withFailureHandler(error => { unlock(); notify(error.message, true); })
+      .withSuccessHandler(result => {
+        unlock();
+        const row = registros.find(row => row.token === payload.token);
+        if (row) {
+          row.hechos ||= [];
+          if (!row.hechos.some(hecho => hecho.accion === payload.accion)) row.hechos.push({accion:payload.accion,fecha:payload.fecha});
+        }
+        persona.dispatchEvent(new Event('change'));
+        get('accion').value = '';
+        fecha.value = '';
+        notify(result.yaRegistrado ? 'Esta acción ya estaba registrada con esa fecha.' : 'Reporte guardado en Seguimiento. Puedes registrar otra acción.');
+      }).guardarReporte(payload);
+  });
+</script>
+</body>
+</html>

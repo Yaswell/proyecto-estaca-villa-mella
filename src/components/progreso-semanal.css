@@ -1,0 +1,42 @@
+.ps-header h1 span { font-weight:550 }
+.ps-header p span { margin-inline:.45rem }
+.ps-tools { display:flex; flex-wrap:wrap; gap:.55rem 1rem; align-items:center; margin:0 0 1rem }
+.ps-tools label { font-weight:700; color:#16394f }
+.ps-tools input { font:inherit; min-height:2.55rem; padding:.4rem .6rem; border:1px solid #9eb2bf; border-radius:.45rem }
+.ps-tools small { color:#435b6e }
+.ps-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,1.38fr); gap:.65rem; align-items:stretch }
+.ps-column { --ps-ink:#184d70; --ps-tint:#e0edf6; --ps-foot:#b7d4eb; display:flex; flex-direction:column; min-width:0; gap:.6rem; border:1px solid #d4e0e6; border-radius:1.45rem; padding:.75rem; background:var(--ps-tint); color:#223442; box-shadow:0 3px 7px #102f4618 }
+.ps-column--1 { --ps-ink:#256139; --ps-tint:#e2f0e2; --ps-foot:#c4ddbd }
+.ps-column--2 { --ps-ink:#765809; --ps-tint:#fff4cd; --ps-foot:#f8e79d }
+.ps-column--3 { --ps-ink:#973e24; --ps-tint:#fbe3d9; --ps-foot:#f4c6ac }
+.ps-completed { --ps-ink:#16394f; --ps-tint:#fff; }
+.ps-column header { min-height:6.5rem; border-bottom:2px solid #fff; text-align:center; color:var(--ps-ink); }
+.ps-column header h2 { font-size:1rem; text-transform:uppercase; color:inherit; margin:.3rem 0 }
+.ps-column header p { margin:.25rem 0; font-size:.81rem; font-style:italic }
+.ps-column ul { list-style:none; margin:0; padding:0 .15rem .2rem; display:grid; gap:.4rem; max-height:27rem; overflow:auto }
+.ps-column footer { margin-top:auto; padding:.65rem; background:var(--ps-foot); border-radius:.6rem; font-weight:700; font-size:.85rem; color:var(--ps-ink) }
+.ps-person,.ps-visit { background:#fff; border-radius:.6rem; box-shadow:0 2px 3px #102f4626 }
+.ps-person summary,.ps-visit { display:flex; align-items:center; justify-content:space-between; gap:.4rem; padding:.65rem; }
+.ps-person summary { cursor:pointer; list-style:none }
+.ps-person summary::-webkit-details-marker { display:none }
+.ps-person small,.ps-visit small { display:block; color:#495f70; font-size:.75rem }
+.ps-person dl { display:grid; gap:.18rem .5rem; grid-template-columns:1fr 1fr; margin:0; padding:.55rem; border-top:1px solid #dae5eb; font-size:.73rem }
+.ps-person dd { margin:0 }
+.ps-age { flex:none; border-radius:.35rem; padding:.22rem .37rem; background:#f9d48e; color:#50360a; font-size:.73rem; font-weight:700 }
+.ps-age--long { background:#f3b4a8; color:#652817 }
+.ps-visit { background:#f1f5f7 }
+.ps-visit b { font-size:.82rem; color:#8a4029; text-align:right }
+.ps-empty { color:#495f70; font-size:.83rem }
+.ps-callout { background:#e8f0f4; border-radius:.65rem; padding:.8rem 1rem; color:#233946 }
+.ps-callout strong { color:#123950; margin-inline-end:.65rem }
+@media (max-width:1050px) { .ps-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .ps-completed { grid-column:1/-1 } }
+@media (max-width:560px) { .ps-grid { grid-template-columns:1fr } .ps-column header { min-height:0; padding-bottom:.4rem } }
+.ps-person-info { min-width:0; overflow-wrap:anywhere }
+.ps-person small.ps-priesthood,.ps-visit small.ps-priesthood { display:inline-block; margin-top:.24rem; padding:.12rem .33rem; border-radius:.3rem; background:#edf1f5; color:#435b6e; font-weight:700 }
+.ps-person small.ps-priesthood--si,.ps-visit small.ps-priesthood--si { background:#d9f2e8; color:#145647 }
+.ps-person small.ps-priesthood--no,.ps-visit small.ps-priesthood--no,.ps-person small.ps-priesthood--revisar,.ps-visit small.ps-priesthood--revisar { background:#faecd9; color:#78400c }
+.ps-whatsapp { display:grid; gap:.35rem; padding:.55rem; border-top:1px solid #dae5eb; font-size:.78rem }
+.ps-whatsapp p { margin:0 }
+.ps-whatsapp button { justify-self:start; border:1px solid #a4d1be; border-radius:.4rem; background:#e5f6ee; color:#145647; padding:.36rem .5rem; font:inherit; font-weight:700; cursor:pointer }
+.ps-whatsapp button:disabled { opacity:.55; cursor:default }
+.ps-whatsapp textarea { box-sizing:border-box; width:100%; min-width:0; resize:vertical; padding:.4rem; font:inherit; color:#223442; border:1px solid #a9bccc; border-radius:.35rem }

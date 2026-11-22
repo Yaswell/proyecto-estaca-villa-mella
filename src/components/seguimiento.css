@@ -1,0 +1,57 @@
+.sr-nav { display:flex; flex-wrap:wrap; gap:.5rem; margin:0 0 1rem }
+.sr-nav a,.sr-button { display:inline-block; padding:.65rem .9rem; border-radius:.6rem; color:#163a66; background:#eaf1fb; text-decoration:none; font-weight:650 }
+.sr-nav a[aria-current="page"],.sr-button { color:white; background:#174d78 }
+.sr-header { padding:clamp(1rem,4vw,2.3rem); border-radius:1rem; background:#102f46; color:#fff; margin:1.2rem 0; }
+.sr-header h1 { color:#fff; font-size:clamp(1.5rem,5vw,2.5rem); margin:.25rem 0 }
+.sr-header p { margin:.45rem 0 0 }
+.sr-kicker { color:#9de4d6; font-size:.75rem; font-weight:750; letter-spacing:.09em }
+.sr-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr)); gap:.8rem; margin-bottom:1.5rem }
+.sr-card { display:grid; align-content:start; gap:.5rem; background:#fff; border:1px solid #d8e3ed; border-top:4px solid #2c8678; border-radius:.8rem; padding:1rem }
+.sr-card h2,.sr-card h3 { margin:0; font-size:1rem; color:#203a4a }
+.sr-card strong { color:#10344e; font-size:1.55rem }
+.sr-card small,.sr-note { color:#495f70 }
+.sr-report { max-width:44rem }
+.sr-report .sr-button { justify-self:start }
+.sr-report li + li { margin-top:.45rem }
+.sr-table { overflow:auto; background:white; border:1px solid #d8e3ed; border-radius:.8rem }
+.sr-table table { width:100%; border-collapse:collapse }
+.sr-table th,.sr-table td { padding:.75rem; text-align:left; border-bottom:1px solid #d8e3ed }
+.sr-table thead { background:#eaf1fb }
+.sr-track { position:relative; margin-top:.35rem; height:.55rem }
+.sr-track progress { display:block; appearance:none; width:100%; height:100%; border:0; border-radius:1rem; color:#24796d; background:#e3ebf2 }
+.sr-track progress::-webkit-progress-bar { border-radius:1rem; background:#e3ebf2 }
+.sr-track progress::-webkit-progress-value { border-radius:1rem; background:#24796d }
+.sr-track progress::-moz-progress-bar { border-radius:1rem; background:#24796d }
+.sr-track span { position:absolute; top:-.15rem; bottom:-.15rem; width:2px; background:#183b50 }
+.sr-filters { background:#fff; border:1px solid #d8e3ed; border-radius:.85rem; padding:1rem; }
+.sr-filters h2 { font-size:1rem; color:#203a4a; margin:0 0 .7rem }
+.sr-filter-controls,.sr-date-fields { display:flex; flex-wrap:wrap; gap:.75rem; align-items:end }
+.sr-field { display:grid; gap:.3rem; min-width:0 }
+.sr-field label,.sr-filters small { font-size:.86rem; color:#435b6e }
+.sr-field label { font-weight:700 }
+.sr-field select { min-height:2.65rem; max-width:100%; border:1px solid #a9bccc; background:#fff; color:#17354a }
+.sr-filters small { display:block; margin-top:.65rem }
+button.sr-button { border:0; min-height:2.65rem; cursor:pointer; font:inherit; font-weight:650 }
+button.sr-button:disabled { opacity:.55; cursor:wait }
+.sr-section { margin:1.35rem 0 }
+.sr-section h2 { color:#17354a; margin:0 0 .3rem; font-size:1.35rem }
+.sr-section > p { margin:.2rem 0 .85rem; color:#495f70 }
+.sr-goals { grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr)); }
+.sr-goal h3 { min-height:2.3em; line-height:1.2 }
+.sr-goal--warn { border-top-color:#aa681d }
+.sr-goal--empty { border-top-color:#8799a7 }
+.sr-goal-target { font-size:.9rem; color:#435b6e }
+.sr-badge { justify-self:start; border-radius:.4rem; padding:.2rem .45rem; font-size:.8rem; font-weight:650 }
+.sr-badge--good { color:#145647; background:#d9f2e8 }
+.sr-badge--warn { color:#78400c; background:#faecd9 }
+.sr-badge--empty { color:#435b6e; background:#eef2f6 }
+.sr-table table { min-width:48rem }
+.sr-table th small,.sr-table td small { display:block; margin-top:.25rem; font-weight:400 }
+.sr-table td,.sr-table th { vertical-align:top }
+.sr-text--good { color:#145647 }
+.sr-text--warn { color:#78400c }
+.sr-text--empty { color:#495f70 }
+.sr-unit-link { font:inherit; font-weight:650; color:#174d78; text-decoration:underline; background:none; border:0; padding:0; cursor:pointer; text-align:left }
+.sr-unit-selected { background:#eaf5ff }
+.sr-field input { box-sizing:border-box; font:inherit; width:9rem; min-height:2.65rem; padding:.4rem .6rem; border:1px solid #a9bccc; border-radius:.3rem; color:#17354a; background:#fff }
+@media(max-width:560px) { .sr-field input { width:100% } .sr-filter-controls > .sr-field { flex:1 1 9rem } }

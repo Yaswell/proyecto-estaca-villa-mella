@@ -4,10 +4,7 @@ import { TemploChart } from "./TemploChart";
 function StatsCards({
   stats,
   dateRange,
-  handleHover,
-  handleLeave,
   temploStats,
-  hoverDetalle, // 👈 ahora viene por props
 }) {
   const rangoTexto = getRangoTexto(dateRange?.start, dateRange?.end);
 
@@ -50,35 +47,8 @@ function StatsCards({
       </div>
       <div className="grid-2">
         <div className="card">
-          <div
-            className="relative group bg-white p-4 rounded-lg shadow-md hover:shadow-lg cursor-default"
-            onMouseEnter={() =>
-              handleHover("Conversos investidos", (data) =>
-                data.filter((row) => {
-                  const val = row["Está investido"]?.toLowerCase().trim();
-                  return val === "sí" || val === "si";
-                }),
-              )
-            }
-            onMouseLeave={handleLeave}
-          >
-            <p className="text-sm text-gray-500">Conversos investidos</p>
-            <p className="text-xl font-bold">{stats.totalInvestidos || 0}</p>
-
-            {/* Tooltip */}
-            {hoverDetalle?.titulo === "Conversos investidos" && (
-              <div className="absolute z-50 top-full mt-2 left-0 w-64 bg-white border border-gray-200 rounded-md shadow-xl p-3 max-h-60 overflow-auto text-xs">
-                <p className="font-semibold mb-1">{hoverDetalle.titulo}</p>
-                <ul className="list-disc list-inside">
-                  {hoverDetalle.personas.map((p, i) => (
-                    <li key={i}>
-                      {p["Nombre completo"] || "Sin nombre"} — {p["Unidad"]}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+          <p className="metric-label">Conversos investidos</p>
+          <p className="metric-value">{stats.totalInvestidos || 0}</p>
         </div>
 
         <div className="card">

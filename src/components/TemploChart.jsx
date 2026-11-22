@@ -38,7 +38,7 @@ export function TemploChart({ data }) {
               }}
             >
               <div style={{ marginBottom: "8px", fontWeight: "bold" }}>
-                {item.value}
+                {item.value === null ? "Sin dato" : item.value}
               </div>
 
               <div

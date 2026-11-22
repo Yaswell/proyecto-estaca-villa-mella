@@ -8,6 +8,32 @@ export function filterByDateRange(data, dateRange) {
   });
 }
 
+export function fechaConfirmacion(row, hoy = new Date()) {
+  const principal = String(row["Fecha de la confirmación"] ?? "").trim();
+  const fecha = parseFechaExacta(principal || row["Fecha de confirmación"]);
+  const bautismo = parseFechaExacta(row["Fecha del bautismo"]);
+  if (!fecha || fecha > hoy || (bautismo && fecha < bautismo)) return null;
+  return fecha;
+}
+
+// Método del reporte inicial, contando ahora desde la confirmación.
+export function estimarDiasRecomendacion(row, hoy = new Date()) {
+  const confirmacion = fechaConfirmacion(row, hoy);
+  const vencimiento = parseFecha(row["Fecha de vencimiento de la recomendación para el templo"]);
+  if (!confirmacion) return null;
+  const ordinal = (date) => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000;
+  const real = parseFechaExacta(row["Fecha de expedición de la recomendación para el templo"]);
+  if (real) {
+    return real >= confirmacion && real <= hoy ? ordinal(real) - ordinal(confirmacion) : null;
+  }
+  if (String(row["Fecha de expedición de la recomendación para el templo"] ?? "").trim()) return null;
+  if (!vencimiento) return null;
+  if (confirmacion.getMonth() === hoy.getMonth() && confirmacion.getFullYear() === hoy.getFullYear()) return 10;
+  const expedicion = new Date(vencimiento.getFullYear() - 1, vencimiento.getMonth(), 1);
+  const dias = ordinal(expedicion) - ordinal(confirmacion);
+  return dias >= 0 && expedicion <= hoy ? dias : null;
+}
+
 export function calculateStats(data) {
   const total = data.length;
 
@@ -33,7 +59,7 @@ export function calculateStats(data) {
   };
 
   conRecomendacion.forEach((row) => {
-    const edad = parseInt(row["Edad"]);
+    const edad = edadRegistrada(row).edad;
     const casado = row["Está casado"]?.trim().toLowerCase() === "sí";
 
     if (!isNaN(edad)) {
@@ -48,46 +74,9 @@ export function calculateStats(data) {
     }
   });
 
-  const hoy = new Date();
-  const mesActual = hoy.getMonth();
-  const anioActual = hoy.getFullYear();
-
   const tiempos = conRecomendacion
-    .map((row) => {
-      const fechaBautismo = parseFecha(row["Fecha del bautismo"]);
-      const vencimientoRaw =
-        row["Fecha de vencimiento de la recomendación para el templo"];
-
-      if (
-        !fechaBautismo ||
-        isNaN(fechaBautismo.getTime()) ||
-        !vencimientoRaw ||
-        vencimientoRaw.trim() === ""
-      ) {
-        return null;
-      }
-
-      const fechaVencimiento = parseFecha(vencimientoRaw);
-      if (!fechaVencimiento || isNaN(fechaVencimiento.getTime())) {
-        return null;
-      }
-
-      const añoVencimiento = fechaVencimiento.getFullYear();
-      const mesVencimiento = fechaVencimiento.getMonth();
-
-      const mesExpedicion = new Date(añoVencimiento - 1, mesVencimiento, 1); // asumes día 1 del mes
-      const esMesEnCurso =
-        fechaBautismo.getMonth() === mesActual &&
-        fechaBautismo.getFullYear() === anioActual;
-
-      if (esMesEnCurso) {
-        return 10; // estimado conservador
-      }
-
-      const dias = (mesExpedicion - fechaBautismo) / (1000 * 60 * 60 * 24);
-      return dias > 0 ? dias : null;
-    })
-    .filter((d) => d !== null);
+    .map((row) => estimarDiasRecomendacion(row))
+    .filter((dias) => dias !== null);
   const promedioDias =
     tiempos.length > 0
       ? Math.round(tiempos.reduce((a, b) => a + b, 0) / tiempos.length)
@@ -120,29 +109,49 @@ export function calculateStats(data) {
   };
 }
 
-export function parseFecha(fechaStr) {
-  // Soporta formatos "dd-mm-yyyy" y "mm-yyyy"
-  let regexDMY = /^(\d{2})-(\d{2})-(\d{4})$/; // dd-mm-yyyy
-  let regexMY = /^(\d{2})-(\d{4})$/; // mm-yyyy
+export function parseFechaExacta(value) {
+  const text = typeof value === "string" ? value.trim() : "";
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+  const numeric = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/.exec(text);
+  const written = /^(\d{1,2})\s+(?:de\s+)?([a-z]+)\.?\s+(?:de\s+)?(\d{4})$/i.exec(text);
+  const months = { ene: 1, feb: 2, mar: 3, abr: 4, may: 5, jun: 6, jul: 7, ago: 8, sep: 9, set: 9, oct: 10, nov: 11, dic: 12 };
+  const [year, month, day] = (iso ? iso.slice(1) : numeric ? [numeric[3], numeric[2], numeric[1]]
+    : written ? [written[3], months[written[2].toLowerCase().slice(0, 3)], written[1]] : []).map(Number);
+  if (!(month >= 1 && month <= 12 && day >= 1 && day <= 31)) return null;
+  const date = new Date(year, month - 1, day);
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null;
+}
 
-  let matchDMY = fechaStr.match(regexDMY);
-  if (matchDMY) {
-    let dia = parseInt(matchDMY[1], 10);
-    let mes = parseInt(matchDMY[2], 10);
-    let año = parseInt(matchDMY[3], 10);
-    if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return null;
-    return new Date(año, mes - 1, dia);
+export function parseFecha(value) {
+  const exact = parseFechaExacta(value);
+  if (exact) return exact;
+  const match = typeof value === "string" && /^(\d{2})[-/](\d{4})$/.exec(value.trim());
+  if (!match) return null;
+  const month = Number(match[1]);
+  return month >= 1 && month <= 12 ? new Date(Number(match[2]), month - 1, 1) : null;
+}
+
+export function edadRegistrada(row, hoy = new Date()) {
+  const principal = String(row["Fecha de nacimiento"] ?? "").trim();
+  const raw = principal || row["Fecha de nacimiento (1 ene 1990)"];
+  const nacimiento = parseFechaExacta(raw);
+  if (nacimiento && nacimiento <= hoy) {
+    const edadAnio = hoy.getFullYear() - nacimiento.getFullYear();
+    const aunNoCumple = hoy.getMonth() < nacimiento.getMonth() ||
+      (hoy.getMonth() === nacimiento.getMonth() && hoy.getDate() < nacimiento.getDate());
+    return { edad: edadAnio - Number(aunNoCumple), edadAnio, tieneNacimiento: true };
   }
+  // Si existe una fecha inválida no se deduce la edad a partir de ella.
+  const fallback = String(row.Edad ?? "").trim();
+  const edad = /^\d+$/.test(fallback) ? Number(fallback) : null;
+  return { edad, edadAnio: null, tieneNacimiento: false };
+}
 
-  let matchMY = fechaStr.match(regexMY);
-  if (matchMY) {
-    let mes = parseInt(matchMY[1], 10);
-    let año = parseInt(matchMY[2], 10);
-    if (mes < 1 || mes > 12) return null;
-    return new Date(año, mes - 1, 1); // Primer día del mes
-  }
-
-  return null; // Formato no reconocido
+export function grupoDoce(row, hoy = new Date()) {
+  const { edad, edadAnio } = edadRegistrada(row, hoy);
+  if (edadAnio !== null) return edadAnio >= 12;
+  if (edad === null || edad === 11) return null;
+  return edad >= 12;
 }
 
 export function groupByAge(data) {
@@ -180,8 +189,8 @@ export function groupByUnit(data) {
 }
 export function promedioDiasSacerdocio(data) {
   const tiemposSacerdocio = data
-    .map((row, index) => {
-      const fechaBautismo = parseFecha(row["Fecha del bautismo"]);
+    .map((row) => {
+      const fechaBautismo = fechaConfirmacion(row);
       const fechaSacerdocio = parseFecha(row["Fecha de la ordenación"]);
       if (
         !fechaBautismo ||
@@ -192,7 +201,7 @@ export function promedioDiasSacerdocio(data) {
         return null;
       }
       const dias = (fechaSacerdocio - fechaBautismo) / (1000 * 60 * 60 * 24);
-      return dias > 0 ? dias : null;
+      return dias >= 0 && fechaSacerdocio <= new Date() ? dias : null;
     })
     .filter((d) => d !== null);
 
@@ -233,10 +242,7 @@ export function calcularIndicadoresTemplo(
   barrioSeleccionado,
 ) {
   // 1. Edad de recomendación (11+)
-  const enEdad = data.filter((row) => {
-    const edad = parseInt(row["Edad"]);
-    return !isNaN(edad) && edad >= 11;
-  });
+  const enEdad = data.filter((row) => grupoDoce(row) === true);
 
   // 2. Con recomendación
   const conRecomendacion = enEdad.filter((row) => {

@@ -8,13 +8,14 @@ export function FiltroBarrio({
 }) {
   return (
     <select
+      id="sr-unidad"
       value={barrioSeleccionado}
       onChange={(e) => setBarrioSeleccionado(e.target.value)}
       style={{ padding: "6px 10px", borderRadius: "4px", fontSize: "1rem" }}
     >
       {barrios.map((barrio) => (
         <option key={barrio} value={barrio}>
-          {barrio}
+          {barrio === "Estaca" ? "Toda la estaca" : barrio}
         </option>
       ))}
     </select>
