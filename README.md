@@ -55,7 +55,7 @@ Las tarjetas muestran el último hito registrado:
 - Visita al templo realizada.
 - Visita con tarjeta familiar explícitamente confirmada.
 
-La vista nominal se carga solo en desarrollo local. Los borradores WhatsApp se copian para revisión y envío manual.
+La vista Progreso semanal está disponible también en la página publicada. Muestra el primer nombre, la edad y el estado de seguimiento por unidad. Los borradores WhatsApp se copian para revisión y envío manual.
 
 ## Prueba local
 

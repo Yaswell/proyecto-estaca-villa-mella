@@ -35,10 +35,9 @@ const SEGUIMIENTO_URL = import.meta.env.VITE_SEGUIMIENTO_CSV_URL ||
 const demo = import.meta.env.DEV && new URLSearchParams(window.location.search).get("demo") === "1";
 const demoBase = import.meta.env.BASE_URL + "__demo/";
 
-const local = import.meta.env.DEV && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
-const ProgresoSemanal = local ? lazy(() => import("./components/ProgresoSemanal.jsx")) : null;
+const ProgresoSemanal = lazy(() => import("./components/ProgresoSemanal.jsx"));
 const vistas = { resumen: "Resumen", seguimiento: "Seguimiento y metas",
-  ...(local ? { semanal: "Progreso semanal" } : {}), reporte: "Senda de los convenios" };
+  semanal: "Progreso semanal", reporte: "Senda de los convenios" };
 const vistaActual = () => Object.hasOwn(vistas, window.location.hash.slice(1)) ? window.location.hash.slice(1) : "resumen";
 
 function mesActual() {
